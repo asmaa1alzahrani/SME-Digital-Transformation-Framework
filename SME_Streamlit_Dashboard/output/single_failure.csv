@@ -1,0 +1,13 @@
+failed_question,gate,level,coverage,dma_style_band
+I01a,G1,0,0.917,Advanced
+I14,G1,0,0.917,Advanced
+I02,G2,1,0.917,Advanced
+I03,G2,1,0.917,Advanced
+I04,G2,1,0.917,Advanced
+I05,G2,1,0.917,Advanced
+I06,G2,1,0.917,Advanced
+I07,G2,1,0.917,Advanced
+I08,G3,2,0.917,Advanced
+I09,G3,2,0.917,Advanced
+I10,G3,2,0.917,Advanced
+I11,G4,3,0.917,Advanced

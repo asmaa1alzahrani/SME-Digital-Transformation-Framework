@@ -1,0 +1,18 @@
+link,from_item,from_gate,to_item,to_gate,records,what_the_records_say,forward
+1,CR,G0,I01a,G1,"DOC14-R004, DOC14-R005",Registration with GOSI and MHRSD follows automatically once the CR is issued,True
+1b,CR,G0,I14,G1,"DOC14-R004, DOC14-R005",Registration with GOSI and MHRSD follows automatically once the CR is issued,True
+2,I01a,G1,I08,G3,"DOC04-R006, DOC04-R007, DOC04-R009","The wage file takes the establishment's name, number and unified ID from its MHRSD registration",True
+3a,I02,G2,I03,G2,"DOC01-R010, DOC01-R011",Contract transactions on Qiwa register the worker in GOSI,True
+3b,I02,G2,I04,G2,"DOC01-R010, DOC01-R011",Contract transactions on Qiwa update wage data in GOSI,True
+4,I03,G2,I08,G3,DOC04-R030,Paying a worker not registered in GOSI and MHRSD is a WPS violation,True
+5,I04,G2,I08,G3,"DOC04-R028, DOC04-R029",Wages in the file are checked against the GOSI-registered wage,True
+6a,I03,G2,I08,G3,DOC04-R005,The compliance rate is calculated from GOSI records and the wage file,True
+6b,I04,G2,I08,G3,DOC04-R005,The compliance rate is calculated from GOSI records and the wage file,True
+7,I06,G2,I08,G3,"DOC04-R003, DOC04-R004",Bank accounts must exist before the wage file is uploaded,True
+8,I07,G2,I08,G3,DOC04-R002,Only users documented through MHRSD may upload wage files,True
+9,I02,G2,I11,G4,"DOC19-R001, DOC19-R003",From 15 Apr 2026 Nitaqat counts Saudis only with Qiwa-documented contracts,True
+10,I04,G2,I11,G4,"DOC21-R001, DOC21-R002, DOC21-R003, DOC21-R004, DOC21-R005",Nitaqat counts Saudis by their GOSI contributory wage,True
+11,I09,G3,I11,G4,"DOC21-R006, DOC21-R008, DOC21-R009, DOC21-R013, DOC21-R016","Part-time, flexible, student, disabled and released-prisoner Saudis count only if GOSI contributions are paid",True
+12,I14,G1,I03,G2,"DOC22-R002; screens DOC22-R008, R009, R016","After GOSI registration the establishment can use GOSI services and GOSI Online, where contributors, annual wages and the establishment bill are managed",True
+12,I14,G1,I04,G2,"DOC22-R002; screens DOC22-R008, R009, R016","After GOSI registration the establishment can use GOSI services and GOSI Online, where contributors, annual wages and the establishment bill are managed",True
+12,I14,G1,I09,G3,"DOC22-R002; screens DOC22-R008, R009, R016","After GOSI registration the establishment can use GOSI services and GOSI Online, where contributors, annual wages and the establishment bill are managed",True

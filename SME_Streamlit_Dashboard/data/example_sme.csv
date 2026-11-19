@@ -1,0 +1,13 @@
+id,answer,note
+I01a,Yes,Qiwa establishment profile shows the café's address; it has no branches
+I14,Yes,GOSI Online 'View Establishment Information' shows the café's data
+I02,No,Qiwa contracts page lists 6 documented contracts but the café employs 8 workers
+I03,Yes,GOSI subscribers list shows all 8 workers
+I04,Yes,GOSI wage details match the payroll
+I05,Yes,The 2 Saudis on the GOSI list both work at the café
+I06,Yes,The café and all 8 workers have bank accounts
+I07,Yes,The owner is the registered Mudad user
+I08,Yes,Mudad dashboard shows a wage file for every month
+I09,Yes,GOSI invoices show no overdue amount
+I10,Yes,No GOSI inspection has been refused
+I11,No,Qiwa Nitaqat page shows the café below the required Saudization ratio
