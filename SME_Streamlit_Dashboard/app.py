@@ -1,167 +1,402 @@
-from pathlib import Path
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
 import streamlit as st
-from readiness import load_questions, score, GATES, LEVEL_NAMES
+from html import escape
+from readiness import (
+    ANSWERS, CAFE_AFTER, CAFE_BEFORE,
+    GATES, QUESTIONS, score
+)
 
-ROOT = Path(__file__).resolve().parent
-DATA = ROOT / 'data'
-OUT = ROOT / 'output'
-st.set_page_config(page_title='SME Compliance Intelligence', page_icon='📊', layout='wide', initial_sidebar_state='expanded')
-st.markdown('''<style>
-.block-container{padding-top:1.7rem;max-width:1450px}h1,h2,h3{letter-spacing:-.025em}
-[data-testid="stMetric"]{background:#f5f8fc;border:1px solid #e2e8f0;border-radius:14px;padding:17px}
-[data-testid="stSidebar"]{background:#f5f8fc}
-.pill{display:inline-block;padding:5px 12px;border-radius:18px;background:#e9f4ef;color:#1c7655;font-weight:600}
-.info{background:#f3f7fc;border-left:4px solid #3478bd;border-radius:8px;padding:13px 16px}
-</style>''', unsafe_allow_html=True)
+st.set_page_config(
+    page_title="SME Compliance Readiness",
+    page_icon="📋",
+    layout="wide"
+)
 
-@st.cache_data
-def get_questions():
-    return load_questions(DATA/'questions.csv')
-qs=get_questions()
-EXAMPLE=pd.read_csv(DATA/'example_sme.csv').set_index('id')['answer'].to_dict()
-if 'answers' not in st.session_state: st.session_state.answers={k:EXAMPLE.get(k,'Yes') for k in qs.index}
-if 'name' not in st.session_state: st.session_state.name='Example: new micro café'
-if 'workers' not in st.session_state: st.session_state.workers=8
-if 'assessed' not in st.session_state: st.session_state.assessed=False
+# =========================
+# Dashboard styling
+# =========================
+
+st.markdown("""
+<style>
+.stApp {
+    background-color: #F4F7FA;
+}
+.block-container {
+    padding-top: 2rem;
+    max-width: 1450px;
+}
+[data-testid="stSidebar"] {
+    background-color: #E8EFF3;
+}
+[data-testid="stMetric"] {
+    background: white;
+    border: 1px solid #DCE5EB;
+    border-radius: 12px;
+    padding: 18px;
+    min-height: 120px;
+}
+[data-testid="stMetricValue"] {
+    color: #176B65;
+}
+[data-testid="stExpander"] {
+    background: white;
+    border-radius: 10px;
+}
+.hero {
+    background: linear-gradient(120deg, #123D46, #176B65);
+    padding: 30px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    color: white;
+}
+.hero h1 {
+    color: white;
+    font-size: 32px;
+    margin: 0;
+}
+.hero p {
+    color: #DCEBEA;
+    margin: 8px 0;
+}
+.gate-card {
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border-left: 5px solid;
+}
+
+.hero {
+    padding: 18px 24px;
+    margin-bottom: 12px;
+}
+.hero h1 {
+    font-size: 28px;
+}
+.hero p {
+    margin: 4px 0;
+}
+[data-testid="stMetric"] {
+    min-height: 90px;
+    padding: 12px;
+}
+button[kind="primary"] {
+    background-color: #176B65 !important;
+    border-color: #176B65 !important;
+    color: white !important;
+}
+[data-testid="stProgress"] div[role="progressbar"] > div {
+    background-color: #176B65 !important;
+}
+[data-testid="stRadio"] input {
+    accent-color: #176B65;
+}
+.gate-card {
+    padding: 10px 14px;
+    margin-bottom: 6px;
+}
+[data-testid="stMarkdownContainer"] hr {
+    margin: 12px 0;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# =========================
+# Header
+# =========================
+
+st.markdown("""
+<div class="hero">
+    <h1>SME Compliance Readiness Assessment</h1>
+    <p>Compliance-Driven Digital Transformation
+    Framework for Saudi SMEs</p>
+    <p style="font-size:13px;">
+        Research Prototype | Version 1.2
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# =========================
+# Sidebar and presets
+# =========================
+
+PRESETS = {
+    "Blank assessment": {},
+    "Café — Before improvement": CAFE_BEFORE,
+    "Café — After improvement": CAFE_AFTER
+}
 
 with st.sidebar:
-    st.title('◈ SME Intelligence')
-    st.caption('Compliance-driven digital transformation')
-    page=st.radio('Navigate', ['Overview', 'SME Assessment', 'Dependencies', 'Evaluation Lab'], label_visibility='collapsed')
+    st.title("Assessment Settings")
+
+    st.markdown("### Example Scenarios")
+
+    preset = st.selectbox(
+        "Select an assessment",
+        list(PRESETS)
+    )
+
+    if st.button(
+        "Apply scenario",
+        use_container_width=True,
+        type="primary"
+    ):
+        for q in QUESTIONS:
+            st.session_state[q[0]] = PRESETS[preset].get(q[0])
+
+    if st.button(
+        "Reset assessment",
+        use_container_width=True
+    ):
+        for q in QUESTIONS:
+            st.session_state[q[0]] = None
+
     st.divider()
-    st.caption('FRAMEWORK STATUS')
-    st.write('**12** regulatory indicators · **4** sequential gates')
-    st.info('Research prototype. Rules and evidence require expert and regulatory verification before real-world use.')
-    if st.button('↺ Reset synthetic example',use_container_width=True):
-        st.session_state.answers={k:EXAMPLE.get(k,'Yes') for k in qs.index}
-        for k in qs.index: st.session_state.pop(f'input_{k}', None)
-        st.session_state.name='Example: new micro café'
-        st.session_state.workers=8
-        st.session_state.assessed=False
-        st.rerun()
 
-answers={q:st.session_state.answers[q] for q in qs.index}
-r=score(answers,qs)
-COLORS={'G1':'#2863a5','G2':'#2e9c88','G3':'#d69c39','G4':'#7d6fbd'}
-LABELS={'G1':'Registration','G2':'Staff Records','G3':'Ongoing Duties','G4':'Saudization'}
+    st.markdown("### Readiness Levels")
 
-def metric_strip(result):
-    a,b,c,d=st.columns(4)
-    a.metric('Readiness level',f"{result['level']} / 4",LEVEL_NAMES[result['level']])
-    b.metric('Coverage',f"{result['coverage']:.0%}",help='For comparison only; does not determine the readiness level')
-    c.metric('Gates met',f"{sum(result['gate_met'].values())} / 4")
-    d.metric('Open requirements',len(result['open_items']))
+    levels = {
+        0: "Not registered",
+        1: "Registered",
+        2: "Staff on record",
+        3: "Ongoing duties met",
+        4: "Ready"
+    }
 
-def gate_chart(result):
-    fig=go.Figure()
-    for g in GATES:
-        fig.add_trace(go.Bar(y=[g],x=[1],orientation='h',name=LABELS[g],marker_color=('#249777' if result['gate_met'][g] else '#e5a14b'),text=('MET' if result['gate_met'][g] else 'NOT MET'),textposition='inside',hovertemplate=f'{g} · {LABELS[g]}<extra></extra>',showlegend=False))
-    fig.update_layout(height=290,margin=dict(l=5,r=5,t=12,b=8),xaxis=dict(visible=False,range=[0,1.05]),yaxis=dict(autorange='reversed',title=None),plot_bgcolor='rgba(0,0,0,0)',paper_bgcolor='rgba(0,0,0,0)')
-    return fig
+    for level, name in levels.items():
+        st.markdown(f"**Level {level}** — {name}")
 
-def gap_chart():
-    df=qs.reset_index()[['id','gate']].copy()
-    df['answer']=df['id'].map(answers)
-    counts=df.assign(unmet=df.answer.eq('No').astype(int)).groupby('gate',sort=False)['unmet'].sum().reindex(GATES)
-    fig=px.bar(x=counts.index,y=counts.values,color=counts.index,color_discrete_map=COLORS,text=counts.values)
-    fig.update_traces(textposition='outside',hovertemplate='Gate %{x}<br>Unmet %{y}<extra></extra>')
-    fig.update_layout(height=290,showlegend=False,xaxis_title=None,yaxis_title='Unmet requirements',yaxis=dict(dtick=1,range=[0,max(2,counts.max()+1)]),margin=dict(l=5,r=5,t=15,b=10))
-    return fig
+    st.divider()
 
-def blocking_panel(result):
-    if result['blocking_id']:
-        q=result['blocking_id']
-        st.warning(f"**Priority blocker: {q}** — {result['blocking_question']}")
-        st.write('**Where to check:**',result['where_to_fix'])
-        st.write('**Regulatory record references:**',result['evidence'])
-        st.caption('Recorded consequence (from the research extraction; verify before operational use): '+str(result['if_no']))
-    else: st.success('All four gates met under the current assessment rules.')
+    st.caption(
+        "This research prototype uses self-reported "
+        "answers and does not connect to government platforms."
+    )
 
-if page=='Overview':
-    st.title('SME Compliance Intelligence')
-    st.caption('Executive dashboard · Current assessment · '+st.session_state.name)
-    metric_strip(r)
-    left,right=st.columns([1.3,1])
-    with left:
-        st.subheader('Sequential gate readiness')
-        st.plotly_chart(gate_chart(r),use_container_width=True)
-    with right:
-        st.subheader('Compliance gaps by gate')
-        st.plotly_chart(gap_chart(),use_container_width=True)
-    st.subheader('Recommended next action')
-    blocking_panel(r)
-    st.caption('A gate may be met even if an earlier gate is not. Readiness level counts only consecutive gates from G1. Synthetic demonstration data unless real answers are supplied.')
-    st.info('To change answers, open **SME Assessment** in the left navigation. Changes are applied when you press Assess Readiness.')
+# =========================
+# Main layout
+# =========================
 
-elif page=='SME Assessment':
-    st.title('Interactive SME Assessment')
-    st.caption('Answer all 12 questions. N/A is accepted only where the rule allows it; eligibility for N/A is not independently verified.')
-    with st.form('assessment'):
-        x,y=st.columns([3,1])
-        name=x.text_input('SME name',value=st.session_state.name)
-        workers=y.number_input('Workers',min_value=0,max_value=100000,value=int(st.session_state.workers))
-        submitted_answers={}
-        for g in GATES:
-            st.subheader(f'{g} — {LABELS[g]}')
-            group=qs[qs['gate']==g]
-            for q,rec in group.iterrows():
-                left,right=st.columns([3.3,1])
-                left.markdown(f'**{q}** · {rec["question"]}')
-                left.caption('N/A condition: '+str(rec['na_allowed_when']))
-                options=['Yes','No'] if int(rec['na_never'])==1 else ['Yes','No','N/A']
-                current=st.session_state.answers[q]
-                submitted_answers[q]=right.selectbox(f'Answer {q}',options,index=options.index(current) if current in options else 0,key=f'input_{q}',label_visibility='collapsed')
-        submitted=st.form_submit_button('✓ Assess Readiness',type='primary',use_container_width=True)
-    if submitted:
-        st.session_state.answers=submitted_answers
-        st.session_state.name=name
-        st.session_state.workers=workers
-        st.session_state.assessed=True
-        st.rerun()
-    if st.session_state.assessed:
+left, right = st.columns([1.15, 1], gap="large")
+
+answers = {}
+
+# =========================
+# Questionnaire
+# =========================
+
+with left:
+
+    st.subheader("Compliance Questionnaire")
+
+    progress_area = st.empty()
+
+    st.caption(
+        "Answer each indicator according to your "
+        "establishment's current status."
+    )
+
+    for g, gname in GATES.items():
+
+        gate_questions = [
+            q for q in QUESTIONS if q[1] == g
+        ]
+
+        with st.expander(
+            f"{g} — {gname} | "
+            f"{len(gate_questions)} indicators",
+            expanded=(g == "G1")
+        ):
+
+            for qid, gate, text, where, cons, na_rule in gate_questions:
+
+                options = ANSWERS if na_rule else ("Yes", "No")
+
+                help_text = (
+                    f"Where to check: {where}. "
+                    f"N/A only if: {na_rule or 'never'}."
+                )
+
+                answers[qid] = st.radio(
+                    f"{qid}. {text}",
+                    options,
+                    index=None,
+                    horizontal=True,
+                    key=qid,
+                    help=help_text
+                )
+
+                if answers[qid] == "N/A":
+                    st.caption(
+                        f"N/A condition: {na_rule}"
+                    )
+
+    answered = sum(
+        value in ANSWERS
+        for value in answers.values()
+    )
+
+    with progress_area.container():
+        st.progress(answered / len(QUESTIONS))
+        st.caption(
+            f"{answered} of {len(QUESTIONS)} indicators answered"
+        )
+
+# =========================
+# Original scoring function
+# =========================
+
+res = score(answers)
+
+# =========================
+# Assessment results
+# =========================
+
+with right:
+
+    st.subheader("Assessment Overview")
+
+    if res["status"] == "Incomplete":
+
+        st.info(
+            f"Complete the remaining "
+            f"{len(res['missing'])} indicator(s) "
+            "to view your assessment results."
+        )
+
+    elif res["status"] == "Check answers":
+
+        st.error(
+            "N/A is not allowed for: "
+            + ", ".join(res["bad_na"])
+        )
+
+    else:
+
+        # KPI cards
+
+        c1, c2, c3 = st.columns(3)
+
+        c1.metric(
+            "Readiness Level",
+            f"{res['level']} / 4"
+        )
+
+        c2.metric(
+            "Coverage",
+            f"{res['coverage']:.1%}"
+        )
+
+        c3.metric(
+            "Open Items",
+            len(res["open_items"])
+        )
+
+        st.markdown(
+            f"**Current level:** {res['level_name']}"
+        )
+
         st.divider()
-        st.subheader('Assessment results')
-        metric_strip(r)
-        c1,c2=st.columns([1.2,1])
-        with c1: st.plotly_chart(gate_chart(r),use_container_width=True)
-        with c2: blocking_panel(r)
-        st.subheader('Open requirements')
-        open_df=qs.loc[r['open_items']].reset_index()[['id','gate','question','where_to_check','records']] if r['open_items'] else pd.DataFrame(columns=['id','gate','question','where_to_check','records'])
-        st.dataframe(open_df,use_container_width=True,hide_index=True)
-        st.download_button('Download assessment CSV',pd.DataFrame([{'id':q,'answer':answers[q]} for q in qs.index]).to_csv(index=False).encode(),file_name='sme_assessment.csv',mime='text/csv')
-        st.caption('What-if analysis: modify any answer above and press Assess Readiness again. No real-world remediation is performed.')
 
-elif page=='Dependencies':
-    st.title('Regulatory Dependency Explorer')
-    st.caption('Evidence-linked relationships supplied by the research team; link direction does not by itself establish a legal prerequisite.')
-    links=pd.read_csv(DATA/'gate_links.csv')
-    g=st.selectbox('Filter by source gate',['All']+GATES)
-    if g!='All': links=links[links['from_gate']==g]
-    st.metric('Evidence-linked rows',len(links))
-    st.dataframe(links,use_container_width=True,hide_index=True)
-    st.download_button('Download filtered links',links.to_csv(index=False).encode(),file_name='gate_links_filtered.csv',mime='text/csv')
-    st.subheader('Indicator reference catalogue')
-    st.dataframe(qs.reset_index()[['id','gate','question','records','where_to_check','na_allowed_when']],hide_index=True,use_container_width=True)
+        # Gate visualization
 
-else:
-    st.title('Simulation & Evaluation Lab')
-    st.caption('Research simulations (A1–A7). Synthetic patterns, not real SME prevalence or observed policy effects.')
-    tab1,tab2,tab3=st.tabs(['Exhaustive enumeration','Monte Carlo','Lift potential'])
-    with tab1:
-        df=pd.read_csv(OUT/'enumeration_band_by_level.csv')
-        st.subheader('4,096 binary patterns · Coverage band vs readiness level')
-        st.dataframe(df,use_container_width=True,hide_index=True)
-        st.caption('All 2^12 Yes/No combinations have equal weight in this enumeration.')
-    with tab2:
-        df=pd.read_csv(OUT/'monte_carlo.csv')
-        st.subheader('80,000 synthetic SMEs across two generators')
-        st.dataframe(df,use_container_width=True,hide_index=True)
-        st.caption('Results depend on assumed response-generation distributions; they are not population estimates.')
-    with tab3:
-        df=pd.read_csv(OUT/'lift_potential.csv')
-        st.subheader('First-blocker counterfactual')
-        st.dataframe(df,use_container_width=True,hide_index=True)
-        st.caption('Fixing only the first blocker is a hypothetical answer change, not a measured causal intervention.')
+        st.subheader("Readiness Journey")
+
+        for i, (g, name) in enumerate(GATES.items()):
+
+            met = res["gate_met"][g]
+
+            if met:
+                color = "#287653"
+                background = "#E6F3EB"
+                status = "✓ Met"
+            else:
+                color = "#B45309"
+                background = "#FFF3E0"
+                status = "Not met"
+
+            st.markdown(f"""
+            <div class="gate-card"
+                 style="background:{background};
+                        border-color:{color};">
+                <div style="display:flex;
+                            justify-content:space-between;
+                            color:#243746;">
+                    <strong>{g} — {escape(name)}</strong>
+                    <strong style="color:{color};">
+                        {status}
+                    </strong>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.caption(
+            "Gate status reflects its own indicators. "
+            "Readiness counts only consecutive met gates "
+            "starting from G1."
+        )
+
+        st.divider()
+
+        # Priority blocker
+
+        st.subheader("Priority Action")
+
+        if res["blocking"]:
+
+            qid, gate, text, where, cons, _ = res["blocking"]
+
+            st.warning(
+                f"**Blocking requirement: {qid} ({gate})**"
+            )
+
+            st.markdown(f"**Requirement:** {text}")
+
+            st.markdown(f"**Where to fix:** {where}")
+
+            st.markdown(f"**Potential consequence:** {cons}")
+
+            st.caption(
+                "Regulatory consequences are provided "
+                "for reference and should be verified "
+                "against current official regulations."
+            )
+
+        else:
+
+            st.success(
+                "All four readiness gates are met."
+            )
+
+        # Open requirements
+
+        if res["open_items"]:
+
+            with st.expander(
+                f"All Open Requirements "
+                f"({len(res['open_items'])})"
+            ):
+
+                for q in QUESTIONS:
+
+                    if q[0] in res["open_items"]:
+
+                        st.markdown(
+                            f"**{q[0]} — {q[2]}**"
+                        )
+
+                        st.caption(
+                            f"Where to fix: {q[3]}"
+                        )
+
+                        st.divider()
+
+# =========================
+# Footer
+# =========================
+
+st.divider()
+
+st.caption(
+    "Compliance-Driven Digital Transformation Framework "
+    "for Saudi SMEs | Academic Research Prototype"
+)
